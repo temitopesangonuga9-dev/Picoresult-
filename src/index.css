@@ -1,0 +1,73 @@
+@import "tailwindcss";
+
+/* Base layout for high-fidelity on-screen A4 view */
+.a4-page-layout {
+  width: 210mm !important;
+  height: 297mm !important;
+  min-height: 297mm !important;
+  max-height: 297mm !important;
+  padding: 6mm 8mm !important;
+  margin: 0 auto;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+  border-radius: 8px !important;
+  background: white !important;
+  box-sizing: border-box !important;
+  transition: transform 0.15s ease-out;
+}
+
+@media print {
+  @page {
+    /* Set A4 size but with a tiny printable margins inside the page setup */
+    size: A4 portrait;
+    margin: 5mm 6mm !important;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  body, html, #root {
+    background: white !important;
+    color: black !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    transform: scale(0.95);
+    transform-origin: top center;
+  }
+
+  /* Hide unnecessary elements like header and controls */
+  .print\:hidden {
+    display: none !important;
+  }
+
+  /* Ensure container scales perfectly to page width */
+  .printable-area {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    box-shadow: none !important;
+    background: white !important;
+  }
+
+  /* When printing, the A4 layout should fill 100% of body width and height relative to paper margins */
+  .a4-page-layout {
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 100% !important;
+    max-height: 280mm !important;
+    overflow: hidden !important;
+    padding: 2mm 4mm !important;
+    margin: 0 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    page-break-inside: avoid !important;
+    page-break-after: always !important;
+    box-sizing: border-box !important;
+    transform: none !important; /* RESET transform scaling when printing */
+  }
+}

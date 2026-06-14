@@ -1,0 +1,6 @@
+{
+  "name": "Progress Intellectual School Results System",
+  "description": "An automated academic results and report card system for Progress Intellectual Schools, Ondo State, Nigeria. Features Admin, Teacher, and Student portals with high-fidelity printable report sheets matching the Nigerian curriculum.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
