@@ -98,6 +98,7 @@ export interface SubjectStats {
   highestInClass: number;
   lowestInClass: number;
   remark: string;
+  rawScore: Score;
 }
 
 // Compute comprehensive statistics for a given student in their class, session and term

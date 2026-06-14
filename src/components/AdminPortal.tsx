@@ -82,6 +82,17 @@ export default function AdminPortal({ db, onUpdateDb, onLogout }: AdminPortalPro
   const [schPrincipalSignature, setSchPrincipalSignature] = useState(db.schoolSettings?.principalSignatureUrl || "");
   const [settingsSuccess, setSettingsSuccess] = useState("");
 
+  // Sync state if db changes
+  React.useEffect(() => {
+    setSchName(db.schoolSettings?.schoolName || "Progress Intellectual Okeigbo Ondo State");
+    setSchMotto(db.schoolSettings?.motto || "Godliness and excellence");
+    setSchAddress(db.schoolSettings?.address || "Progress College Road, Off Surulere Street, Oke Igbo, Ondo State");
+    setSchPhone(db.schoolSettings?.phone || "08107385362");
+    setSchEmail(db.schoolSettings?.email || "info@progresschools.com");
+    setSchLogo(db.schoolSettings?.logoUrl || "");
+    setSchPrincipalSignature(db.schoolSettings?.principalSignatureUrl || "");
+  }, [db.schoolSettings]);
+
   // States for report card design customizer
   const [layoutShowPassport, setLayoutShowPassport] = useState(db.reportCardLayout?.showPassport !== false);
   const [layoutShowLogo, setLayoutShowLogo] = useState(db.reportCardLayout?.showLogo !== false);
@@ -198,7 +209,9 @@ export default function AdminPortal({ db, onUpdateDb, onLogout }: AdminPortalPro
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setSchLogo(reader.result as string);
+        const base64 = reader.result as string;
+        setSchLogo(base64);
+        onUpdateDb({ ...db, schoolSettings: { ...db.schoolSettings, logoUrl: base64 } });
       };
       reader.readAsDataURL(file);
     }
@@ -209,7 +222,9 @@ export default function AdminPortal({ db, onUpdateDb, onLogout }: AdminPortalPro
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setSchPrincipalSignature(reader.result as string);
+        const base64 = reader.result as string;
+        setSchPrincipalSignature(base64);
+        onUpdateDb({ ...db, schoolSettings: { ...db.schoolSettings, principalSignatureUrl: base64 } });
       };
       reader.readAsDataURL(file);
     }
@@ -1016,6 +1031,10 @@ export default function AdminPortal({ db, onUpdateDb, onLogout }: AdminPortalPro
             <div className="flex items-center gap-2 mb-1">
               <span className="bg-amber-500 text-emerald-950 text-[9px] px-2.5 py-0.5 rounded-full font-black uppercase tracking-wider shadow-xs">
                 System Admin Portal
+              </span>
+              <span className="bg-emerald-500/20 text-emerald-100 text-[8px] px-2 py-0.5 rounded-full font-bold uppercase tracking-widest flex items-center gap-1 border border-emerald-500/30">
+                <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse"></div>
+                Live Cloud Mode
               </span>
             </div>
             <h1 className="text-xl md:text-2xl font-black tracking-tight uppercase leading-tight">
@@ -2414,6 +2433,49 @@ export default function AdminPortal({ db, onUpdateDb, onLogout }: AdminPortalPro
                 Save School Setup Settings
               </button>
             </form>
+
+            <div className="mt-12 pt-8 border-t border-slate-200">
+              <h2 className="text-md font-bold text-rose-800 mb-4 flex items-center gap-2 uppercase tracking-tight">
+                <ShieldAlert size={16} className="text-rose-650" />
+                Live Cloud Sync Tools
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-5 border border-slate-200 rounded-2xl bg-white shadow-xs">
+                  <h3 className="text-xs font-black text-slate-800 uppercase mb-1">Push Local to Cloud</h3>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase mb-4 leading-tight">
+                    Forcefully upload everything currently on this screen to the cloud database. Use this if your changes aren't appearing elsewhere.
+                  </p>
+                  <button
+                    onClick={() => {
+                      if (confirm("This will overwrite the database in the cloud with exactly what is on this screen. Continue?")) {
+                        onUpdateDb(db);
+                        alert("Database successfully pushed to cloud!");
+                      }
+                    }}
+                    className="w-full bg-slate-100 hover:bg-slate-800 hover:text-white text-slate-850 font-black py-3 rounded-xl border border-slate-200 transition text-[9px] uppercase tracking-wider cursor-pointer"
+                  >
+                    Overwrite Cloud with This Browser
+                  </button>
+                </div>
+                <div className="p-5 border border-slate-200 rounded-2xl bg-white shadow-xs">
+                  <h3 className="text-xs font-black text-slate-800 uppercase mb-1">Wipe Local Cache</h3>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase mb-4 leading-tight">
+                    Delete local browser storage and force a fresh reload from the Live Cloud. Use this to sync with what's actually in the cloud.
+                  </p>
+                  <button
+                    onClick={() => {
+                      if (confirm("This will clear your browser's local cache and reload the page. Continue?")) {
+                        localStorage.clear();
+                        window.location.reload();
+                      }
+                    }}
+                    className="w-full bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-700 font-black py-3 rounded-xl border border-rose-100 transition text-[9px] uppercase tracking-wider cursor-pointer"
+                  >
+                    Clear Local Cache & Reload
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 

@@ -5,23 +5,49 @@ import AdminPortal from "./components/AdminPortal";
 import TeacherPortal from "./components/TeacherPortal";
 import StudentPortal from "./components/StudentPortal";
 import ReportCard from "./components/ReportCard";
+import { syncDatabase, saveDatabaseToFirestore } from "./lib/dbSync";
 
 export default function App() {
-  const [db, setDb] = useState<Database>(getDatabase());
+  const [db, setDb] = useState<Database | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [syncFailed, setSyncFailed] = useState(false);
   const [userRole, setUserRole] = useState<"landing" | "admin" | "teacher" | "student">("landing");
   const [userId, setUserId] = useState<string>("");
-
-  // Report view toggler: If not null, shows printable report sheet overlay
   const [reportView, setReportView] = useState<{
     studentId: string;
     session: string;
     term: string;
   } | null>(null);
 
-  const handleUpdateDb = (newDb: Database) => {
-    setDb(newDb);
-    saveDatabase(newDb);
-  };
+  useEffect(() => {
+    const unsub = syncDatabase((syncedDb) => {
+      // Robust check: Is it truly empty?
+      const hasAnyData = (syncedDb.students && syncedDb.students.length > 0) || 
+                         (syncedDb.classes && syncedDb.classes.length > 0) ||
+                         (syncedDb.schoolSettings && syncedDb.schoolSettings.schoolName);
+
+      if (!hasAnyData) {
+        const seeded = getDatabase();
+        // Only seed to cloud if we haven't failed sync
+        if (!syncFailed) {
+          saveDatabaseToFirestore(seeded);
+        }
+        setDb(seeded);
+      } else {
+        setDb(syncedDb);
+        setSyncFailed(false);
+      }
+      setLoading(false);
+    }, (error) => {
+      console.error("Firestore sync error:", error);
+      setSyncFailed(true);
+      // Fallback to local storage if firestore fails
+      const localData = getDatabase();
+      setDb(localData);
+      setLoading(false);
+    });
+    return unsub;
+  }, [syncFailed]);
 
   const handleLoginSuccess = (role: "admin" | "teacher" | "student", id: string) => {
     setUserRole(role);
@@ -35,10 +61,33 @@ export default function App() {
     setReportView(null);
   };
 
+  const handleUpdateDb = async (newDb: Database) => {
+    try {
+      await saveDatabaseToFirestore(newDb);
+      setDb(newDb);
+      saveDatabase(newDb);
+      setSyncFailed(false);
+    } catch (error) {
+      console.error("Failed to save to Firestore:", error);
+      alert("Error saving data to the cloud. Changes saved locally to this browser only.");
+      setDb(newDb);
+      saveDatabase(newDb);
+      setSyncFailed(true);
+    }
+  };
+
   // Back from printing goes back to student portal or whichever active portal trigger
   const handleBackToPortal = () => {
     setReportView(null);
   };
+
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  }
+  
+  if (!db) {
+    return <div className="min-h-screen flex items-center justify-center text-red-600">Failed to load application data. Please check your network or refresh the page.</div>;
+  }
 
   return (
     <div className="bg-slate-50 min-h-screen text-slate-800 font-sans tracking-tight antialiased">

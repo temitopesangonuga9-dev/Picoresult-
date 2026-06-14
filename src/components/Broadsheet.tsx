@@ -341,42 +341,94 @@ export default function Broadsheet({ db, teacherId }: BroadsheetProps) {
               <table className="w-full text-left border-collapse border border-slate-300">
                 <thead>
                   <tr className="text-white text-[11px] font-bold uppercase tracking-wider text-center" style={{ backgroundColor: themeColor }}>
-                    <th className="p-2 border border-white/20 w-12 sticky md:static left-0 z-10 shadow-[1px_0_0_#cbd5e1] print:shadow-none bg-inherit md:bg-transparent">Pos</th>
+                    <th className="p-2 border border-white/20 w-16 sticky md:static left-0 z-10 shadow-[1px_0_0_#cbd5e1] print:shadow-none bg-inherit md:bg-transparent">Pos</th>
                     <th className="p-2 border border-white/20 text-left sticky md:static left-[48px] z-10 shadow-[1px_0_0_#cbd5e1] print:shadow-none bg-inherit md:bg-transparent min-w-[200px]">Student Name</th>
+                    <th className="p-2 border border-white/20 w-24">Reg No</th>
                     {classSubjects.map(subId => {
                       const subInfo = db.subjects.find(s => s.id === subId);
-                      return <th key={subId} className="p-2 border border-white/20 max-w-[100px] print:max-w-none text-center truncate" title={subInfo?.name}>{subInfo?.name || subId}</th>
+                      return (
+                        <React.Fragment key={subId}>
+                          <th colSpan={4} className="p-1 border border-white/20 text-center" title={subInfo?.name}>{subInfo?.name || subId}</th>
+                        </React.Fragment>
+                      );
                     })}
-                    <th className="p-2 border border-white/20 text-center w-20">Total</th>
+                    <th className="p-2 border border-white/20 text-center w-20">Overall Total</th>
                     <th className="p-2 border border-white/20 text-center w-24">%</th>
+                    <th className="p-2 border border-white/20 w-16 text-center">Grade</th>
+                    <th className="p-2 border border-white/20 w-24 text-center">Remark</th>
+                  </tr>
+                  <tr className="text-white text-[9px] font-bold uppercase tracking-wider text-center" style={{ backgroundColor: themeColor }}>
+                    <th className="p-1 border-r border-white/20"></th>
+                    <th className="p-1 border-r border-white/20"></th>
+                    <th className="p-1 border-r border-white/20"></th>
+                    {classSubjects.map(subId => (
+                      <React.Fragment key={subId}>
+                        <th className="p-1 border-r border-white/20">T1</th>
+                        <th className="p-1 border-r border-white/20">T2</th>
+                        <th className="p-1 border-r border-white/20">EX</th>
+                        <th className="p-1 border-r border-white/20">TOT</th>
+                      </React.Fragment>
+                    ))}
+                    <th className="p-1 border-r border-white/20"></th>
+                    <th className="p-1 border-r border-white/20"></th>
+                    <th className="p-1 border-r border-white/20"></th>
+                    <th className="p-1"></th>
                   </tr>
                 </thead>
                 <tbody className="text-[10px] uppercase font-bold text-slate-800">
-                  {classRows.length > 0 ? classRows.map((row) => (
+                  {classRows.length > 0 ? classRows.map((row) => {
+                    const avg = row.percentage;
+                     const gradeInfo = db.schoolSettings?.schoolName ? (() => {
+                      if (avg >= 75) return { grade: "A1", text: "Excellent" };
+                      if (avg >= 70) return { grade: "B2", text: "Very good" };
+                      if (avg >= 65) return { grade: "B3", text: "Good" };
+                      if (avg >= 60) return { grade: "C4", text: "Credit" };
+                      if (avg >= 55) return { grade: "C5", text: "Credit" };
+                      if (avg >= 50) return { grade: "C6", text: "Credit" };
+                      if (avg >= 45) return { grade: "D7", text: "Pass" };
+                      if (avg >= 40) return { grade: "E8", text: "Pass" };
+                      return { grade: "F9", text: "Fail" };
+                    })() : { grade: "-", text: "-" };
+                    
+                    return (
                     <tr key={row.student.id} className="border-b border-slate-300 print:break-inside-avoid hover:bg-slate-50">
                       <td className="p-2 text-center border-r border-slate-300 sticky md:static left-0 bg-white group-hover:bg-slate-50 shadow-[1px_0_0_#cbd5e1] z-10 print:shadow-none">
                         <span className="font-bold text-xs text-slate-800">{row.position}</span>
-                        <span className="text-[9px] text-slate-500">{getNumberSuffix(row.position)}</span>
                       </td>
                       <td className="p-2 border-r border-slate-300 sticky md:static left-[48px] bg-white group-hover:bg-slate-50 shadow-[1px_0_0_#cbd5e1] z-10 print:shadow-none max-w-[200px] print:max-w-none">
                         <div className="text-[11px] truncate" title={row.student.fullName}>{row.student.fullName}</div>
-                        <div className="text-[9px] text-slate-500 font-mono mt-0.5 truncate">{row.student.regNo}</div>
                       </td>
-                      {classSubjects.map(subId => (
-                        <td key={subId} className="p-2 text-center text-[11px] font-medium text-slate-600 border-r border-slate-300">
-                           {row.totals[subId]}
-                        </td>
-                      ))}
+                      <td className="p-2 text-center text-[11px] border-r border-slate-300 font-mono text-slate-600">
+                        {row.student.regNo}
+                      </td>
+                      {classSubjects.map(subId => {
+                         const scoreObj = db.scores.find(sc => sc.studentId === row.student.id && sc.subjectId === subId);
+                         return (
+                            <React.Fragment key={subId}>
+                               <td className="p-1 text-center text-[10px] border-r border-slate-300">{scoreObj?.test1 || "-"}</td>
+                               <td className="p-1 text-center text-[10px] border-r border-slate-300">{scoreObj?.test2 || "-"}</td>
+                               <td className="p-1 text-center text-[10px] border-r border-slate-300">{scoreObj?.exam || "-"}</td>
+                               <td className="p-1 text-center text-[10px] font-bold border-r border-slate-300 bg-emerald-50">{row.totals[subId]}</td>
+                            </React.Fragment>
+                         );
+                      })}
                       <td className="p-2 text-center text-[11px] font-bold text-slate-800 border-r border-slate-300">
                         {row.overallScore}
                       </td>
                       <td className="p-2 text-center text-[11px] font-bold border-r border-slate-300">
                         {row.percentage.toFixed(1)}%
                       </td>
+                      <td className="p-2 text-center text-xs font-black border-r border-slate-300" style={{ color: gradeInfo.grade.includes("A") || gradeInfo.grade.includes("B") ? "#15803d" : gradeInfo.grade.includes("F") ? "#b91c1c" : "inherit" }}>
+                          {gradeInfo.grade}
+                      </td>
+                      <td className="p-2 text-center text-[9px] font-bold border-r border-slate-300">
+                          {gradeInfo.text}
+                      </td>
                     </tr>
-                  )) : (
+                    );
+                  }) : (
                     <tr>
-                       <td colSpan={classSubjects.length + 4} className="p-6 text-center text-xs font-bold text-slate-400">No students or scores recorded in this class.</td>
+                       <td colSpan={classSubjects.length * 4 + 7} className="p-6 text-center text-xs font-bold text-slate-400">No students or scores recorded in this class.</td>
                     </tr>
                   )}
                 </tbody>

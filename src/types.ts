@@ -86,6 +86,7 @@ export interface SchoolSettings {
   email: string;
   logoUrl: string;
   principalSignatureUrl?: string;
+  themeColor?: string;
 }
 
 export interface ReportCardLayout {

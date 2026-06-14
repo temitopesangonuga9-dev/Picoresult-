@@ -1,0 +1,23 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /admins/{admin} { allow read, write: if true; }
+    match /students/{student} { allow read, write: if true; }
+    match /classes/{class} { allow read, write: if true; }
+    match /subjects/{subject} { allow read, write: if true; }
+    match /teachers/{teacher} { allow read, write: if true; }
+    match /scores/{score} { allow read, write: if true; }
+    match /affectiveTraits/{trait} { allow read, write: if true; }
+    match /psychomotorSkills/{skill} { allow read, write: if true; }
+    match /subjectAssignments/{sa} { allow read, write: if true; }
+    match /classTeacherAssignments/{cta} { allow read, write: if true; }
+    match /scoreComponents/{sc} { allow read, write: if true; }
+    match /settings/{doc} { allow read, write: if true; }
+    
+    // Catch-all
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}
+

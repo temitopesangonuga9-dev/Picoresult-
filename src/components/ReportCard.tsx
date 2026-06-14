@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Student } from "../types";
 import { Database, DEFAULT_STUDENT_AVATAR } from "../data";
-import { computeStudentReport, computeClassOverview, getRemarkColor } from "../utils";
+import { computeStudentReport, computeClassOverview, getRemarkColor, getScoreComponents } from "../utils";
 import { Printer, MapPin, Phone, Mail, Loader2, Download } from "lucide-react";
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
@@ -179,7 +179,23 @@ export default function ReportCard({ studentId, session, term, db, onBack, hideC
     showContactInfo: true,
     showSessionTermBar: true,
     showStudentBasicMetricGrid: true,
+    showAttendance: true,
+    showNextTermBegins: true,
+    showTermEnded: true,
+    showStudentRegNo: true,
     showClassStatistics: true,
+    showPositionInClass: true,
+    showPositionInSection: true,
+    showOverallTotalScore: true,
+    showStudentAverageScore: true,
+    showClassHighestScore: true,
+    showClassLowestScore: true,
+    showClassAverage: true,
+    showTablePreviousTerms: true,
+    showTableRemarks: true,
+    showTableSubjectPosition: true,
+    showTableClassAverage: true,
+    showTableHighestLowest: true,
     showAffectiveTraits: true,
     showPsychomotorSkills: true,
     showGradingScale: true,

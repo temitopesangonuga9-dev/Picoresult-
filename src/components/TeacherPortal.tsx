@@ -3,7 +3,7 @@ import { Score, Student, AffectiveTraits, PsychomotorSkills } from "../types";
 import { Database, DEFAULT_TEACHER_AVATAR, DEFAULT_STUDENT_AVATAR, generateUsername } from "../data";
 import { calculateGrade, getScoreComponents, calculateCurrentTermTotal } from "../utils";
 import Broadsheet from "./Broadsheet";
-import { Table, Save, AlertCircle, Edit, Check, Star, RefreshCw, UserCheck, BookOpen, AlertTriangle, ArrowUpDown, FileSpreadsheet, Download, Upload, FileUp, UserPlus, Plus, Image } from "lucide-react";
+import { Table, Save, AlertCircle, Edit, Check, Star, RefreshCw, UserCheck, BookOpen, AlertTriangle, ArrowUpDown, FileSpreadsheet, Download, Upload, FileUp, UserPlus, Plus, Image, FileText } from "lucide-react";
 import * as XLSX from "xlsx";
 
 interface TeacherPortalProps {
@@ -48,6 +48,14 @@ export default function TeacherPortal({ teacherId, db, onUpdateDb, onLogout }: T
   const [selectedSession, setSelectedSession] = useState("2025/2026");
   const [selectedTerm, setSelectedTerm] = useState("Term2");
   const [selectedClass, setSelectedClass] = useState(db.classes[0]?.id || "");
+  
+  // Keep selectedClass synced if db classes change
+  React.useEffect(() => {
+    if (db.classes.length > 0 && !db.classes.find((c) => c.id === selectedClass)) {
+      setSelectedClass(db.classes[0].id);
+    }
+  }, [db.classes]);
+
   const [selectedSubject, setSelectedSubject] = useState(
     currentTeacher.subjectIds?.[0] || db.subjects[0]?.id || ""
   );
@@ -72,7 +80,7 @@ export default function TeacherPortal({ teacherId, db, onUpdateDb, onLogout }: T
   const [commitFeedback, setCommitFeedback] = useState("");
 
   // Enrollment State
-  const [activeTeacherTab, setActiveTeacherTab] = useState<"scores" | "enrollment" | "broadsheet" | "remarks">("scores");
+  const [activeTeacherTab, setActiveTeacherTab] = useState<"scores" | "enrollment" | "broadsheet" | "remarks" | "report_settings">("scores");
   const [enrollName, setEnrollName] = useState("");
   const [enrollReg, setEnrollReg] = useState("");
   const [enrollClass, setEnrollClass] = useState(db.classes[0]?.id || "");
@@ -652,6 +660,11 @@ export default function TeacherPortal({ teacherId, db, onUpdateDb, onLogout }: T
     });
   };
 
+  // Report Settings state
+  const [classDaysOpened, setClassDaysOpened] = useState(118);
+  const [classNextTermBegins, setClassNextTermBegins] = useState("2026-04-27");
+  const [classTermEnded, setClassTermEnded] = useState("2026-07-24");
+
   // Report Remarks update helper
   const handleCommentChange = (field: "classTeacherReport" | "principalReport", value: string) => {
     if (!activeStudentObj) return;
@@ -797,6 +810,7 @@ export default function TeacherPortal({ teacherId, db, onUpdateDb, onLogout }: T
           {[
             { id: "scores", label: "Score Sheets & Traits", icon: BookOpen },
             { id: "remarks", label: "Student Remarks", icon: FileText },
+            { id: "report_settings", label: "Report Settings", icon: FileUp },
             { id: "enrollment", label: "Student Enrollment", icon: UserPlus },
             { id: "broadsheet", label: "Broadsheet", icon: Table }
           ].map((tab) => {
@@ -993,7 +1007,7 @@ export default function TeacherPortal({ teacherId, db, onUpdateDb, onLogout }: T
               </div>
 
               <div className="space-y-4">
-                {classStudents.map(student => (
+                {sortedClassStudents.map(student => (
                   <div key={student.id} className="border border-slate-200 rounded-lg p-4 bg-slate-50">
                     <div className="flex items-center gap-3 mb-3">
                       <img src={student.passportUrl || DEFAULT_STUDENT_AVATAR} className="w-10 h-10 rounded-full border border-slate-300 object-cover" />
@@ -1034,12 +1048,77 @@ export default function TeacherPortal({ teacherId, db, onUpdateDb, onLogout }: T
                   </div>
                 ))}
 
-                {classStudents.length === 0 && (
+                {sortedClassStudents.length === 0 && (
                   <div className="py-8 text-center text-slate-400 font-bold text-xs uppercase">
                     No registered students found in {selectedClass} registry.
                   </div>
                 )}
               </div>
+            </div>
+          )}
+
+          {activeTeacherTab === "report_settings" && (
+            <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs animate-fade-in select-text">
+              <div className="border-b border-slate-200 pb-3 mb-4">
+                 <h3 className="text-sm font-black text-slate-800 uppercase tracking-tight flex items-center gap-2">
+                   <FileUp size={16} className="text-emerald-600" />
+                   Class-wide Report Metrics
+                 </h3>
+                 <p className="text-[10px] text-slate-400 font-bold uppercase mt-0.5">
+                   Update days school opened, term dates for all {selectedClass} students.
+                 </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div>
+                  <label className="block text-[10px] font-extrabold text-slate-500 uppercase mb-1">Days School Opened</label>
+                  <input
+                    type="number"
+                    value={classDaysOpened}
+                    onChange={(e) => setClassDaysOpened(parseInt(e.target.value))}
+                    className="w-full text-xs px-3 py-2 border border-slate-300 rounded-lg focus:outline-emerald-600 bg-white font-bold"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-extrabold text-slate-500 uppercase mb-1">Next Term Begins</label>
+                  <input
+                    type="date"
+                    value={classNextTermBegins}
+                    onChange={(e) => setClassNextTermBegins(e.target.value)}
+                    className="w-full text-xs px-3 py-2 border border-slate-300 rounded-lg focus:outline-emerald-600 bg-white font-bold"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-extrabold text-slate-500 uppercase mb-1">Term Ended</label>
+                  <input
+                    type="date"
+                    value={classTermEnded}
+                    onChange={(e) => setClassTermEnded(e.target.value)}
+                    className="w-full text-xs px-3 py-2 border border-slate-300 rounded-lg focus:outline-emerald-600 bg-white font-bold"
+                  />
+                </div>
+              </div>
+              
+              <button
+                onClick={() => {
+                  const updatedStudents = db.students.map(s => {
+                    if (s.classId === selectedClass) {
+                      return {
+                        ...s,
+                        daysSchoolOpened: classDaysOpened,
+                        nextTermBegins: classNextTermBegins,
+                        termEnded: classTermEnded
+                      };
+                    }
+                    return s;
+                  });
+                  onUpdateDb({ ...db, students: updatedStudents });
+                  alert("Report metrics updated for all students in " + selectedClass);
+                }}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 py-2 rounded-lg"
+              >
+                Apply to Class
+              </button>
             </div>
           )}
 

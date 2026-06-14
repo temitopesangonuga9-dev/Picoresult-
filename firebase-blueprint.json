@@ -1,0 +1,166 @@
+{
+  "entities": {
+    "Admin": {
+      "title": "Admin",
+      "description": "Administrator account",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "fullName": { "type": "string" },
+        "username": { "type": "string" },
+        "password": { "type": "string" },
+        "role": { "type": "string", "enum": ["super_admin", "sub_admin"] }
+      }
+    },
+    "Student": {
+      "title": "Student",
+      "description": "Student profile",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "fullName": { "type": "string" },
+        "username": { "type": "string" },
+        "regNo": { "type": "string" },
+        "classId": { "type": "string" },
+        "passportUrl": { "type": "string" },
+        "session": { "type": "string" },
+        "term": { "type": "string" },
+        "nextTermBegins": { "type": "string" },
+        "termEnded": { "type": "string" },
+        "daysSchoolOpened": { "type": "number" },
+        "daysPresent": { "type": "number" },
+        "daysAbsent": { "type": "number" },
+        "classTeacherReport": { "type": "string" },
+        "principalReport": { "type": "string" }
+      }
+    },
+    "Class": {
+      "title": "Class",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "section": { "type": "string" },
+        "arm": { "type": "string" }
+      }
+    },
+    "Subject": {
+      "title": "Subject",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "code": { "type": "string" }
+      }
+    },
+    "Teacher": {
+      "title": "Teacher",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "fullName": { "type": "string" },
+        "username": { "type": "string" },
+        "subjectIds": { "type": "array", "items": { "type": "string" } },
+        "passportUrl": { "type": "string" }
+      }
+    },
+    "Score": {
+      "title": "Score",
+      "type": "object",
+      "properties": {
+        "studentId": { "type": "string" },
+        "subjectId": { "type": "string" },
+        "session": { "type": "string" },
+        "term": { "type": "string" },
+        "test1": { "type": "number" },
+        "test2": { "type": "number" },
+        "exam": { "type": "number" },
+        "firstTerm": { "type": "number" },
+        "secondTerm": { "type": "number" }
+      }
+    },
+    "AffectiveTrait": {
+      "title": "Affective Trait",
+      "type": "object",
+      "properties": {
+        "studentId": { "type": "string" },
+        "session": { "type": "string" },
+        "term": { "type": "string" },
+        "punctuality": { "type": "number" },
+        "mentalAlertness": { "type": "number" },
+        "behaviour": { "type": "number" },
+        "reliability": { "type": "number" },
+        "attentiveness": { "type": "number" },
+        "respect": { "type": "number" },
+        "neatness": { "type": "number" },
+        "politeness": { "type": "number" },
+        "honesty": { "type": "number" },
+        "relationshipWithStaff": { "type": "number" },
+        "relationshipWithStudents": { "type": "number" },
+        "attitudeToSchool": { "type": "number" },
+        "selfControl": { "type": "number" }
+      }
+    },
+    "PsychomotorSkill": {
+      "title": "Psychomotor Skill",
+      "type": "object",
+      "properties": {
+        "studentId": { "type": "string" },
+        "session": { "type": "string" },
+        "term": { "type": "string" },
+        "spiritOfTeamwork": { "type": "number" },
+        "initiatives": { "type": "number" },
+        "organizationalAbility": { "type": "number" },
+        "handwriting": { "type": "number" },
+        "reading": { "type": "number" },
+        "verbalFluencyDiction": { "type": "number" },
+        "musicalSkills": { "type": "number" },
+        "creativeArts": { "type": "number" },
+        "physicalEducation": { "type": "number" },
+        "generalReasoning": { "type": "number" }
+      }
+    },
+    "SubjectAssignment": {
+      "title": "Subject Assignment",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "classId": { "type": "string" },
+        "subjectId": { "type": "string" },
+        "teacherId": { "type": "string" }
+      }
+    },
+    "ClassTeacherAssignment": {
+      "title": "Class Teacher Assignment",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "classId": { "type": "string" },
+        "teacherId": { "type": "string" }
+      }
+    },
+    "Settings": {
+      "title": "School Settings",
+      "type": "object",
+      "properties": {
+        "schoolSettings": { "type": "object" },
+        "reportCardLayout": { "type": "object" },
+        "sessions": { "type": "array", "items": { "type": "string" } },
+        "terms": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  },
+  "firestore": {
+    "admins/{adminId}": { "schema": "Admin" },
+    "students/{studentId}": { "schema": "Student" },
+    "classes/{classId}": { "schema": "Class" },
+    "subjects/{subjectId}": { "schema": "Subject" },
+    "teachers/{teacherId}": { "schema": "Teacher" },
+    "scores/{scoreId}": { "schema": "Score" },
+    "affectiveTraits/{traitId}": { "schema": "AffectiveTrait" },
+    "psychomotorSkills/{skillId}": { "schema": "PsychomotorSkill" },
+    "subjectAssignments/{assignmentId}": { "schema": "SubjectAssignment" },
+    "classTeacherAssignments/{assignmentId}": { "schema": "ClassTeacherAssignment" },
+    "settings/main": { "schema": "Settings" }
+  }
+}
