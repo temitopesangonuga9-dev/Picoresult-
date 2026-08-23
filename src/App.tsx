@@ -5,7 +5,7 @@ import AdminPortal from "./components/AdminPortal";
 import TeacherPortal from "./components/TeacherPortal";
 import StudentPortal from "./components/StudentPortal";
 import ReportCard from "./components/ReportCard";
-import { syncDatabase, saveDatabaseToFirestore } from "./lib/dbSync";
+import { syncDatabase, saveDatabaseToServer } from "./lib/dbSync";
 
 export default function App() {
   const [db, setDb] = useState<Database | null>(null);
@@ -63,7 +63,7 @@ export default function App() {
 
   const handleUpdateDb = async (newDb: Database) => {
     try {
-      await saveDatabaseToFirestore(newDb);
+      await saveDatabaseToServer(newDb);
       setDb(newDb);
       saveDatabase(newDb);
       setSyncFailed(false);
