@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Database } from "../data";
+import { loginRequest } from "../lib/dbSync";
 import { BookOpen, Shield, GraduationCap, Users, MapPin, Key, User, ArrowRight, Star, Heart, Eye, EyeOff } from "lucide-react";
 
 interface LandingPageProps {
@@ -15,10 +16,11 @@ export default function LandingPage({ db, onLoginSuccess }: LandingPageProps) {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const { schoolName, motto, logoUrl } = db.schoolSettings;
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg("");
 
@@ -28,40 +30,22 @@ export default function LandingPage({ db, onLoginSuccess }: LandingPageProps) {
     }
 
     const cleanUser = username.trim().toLowerCase();
-
-    if (activeRole === "admin") {
-      if (cleanUser === "admin@progressintellectual.edu.ng" && password === "admin123") {
-        onLoginSuccess("admin", "admin_root");
-      } else {
-        const adminMatch = db.admins?.find(a => a.username.toLowerCase() === cleanUser);
-        if (adminMatch && password === adminMatch.password) {
-           onLoginSuccess("admin", adminMatch.id);
-        } else {
-           setErrorMsg("Invalid Admin portal credentials.");
-        }
-      }
-    } else if (activeRole === "teacher") {
-      const match = db.teachers.find(
-        (t) => t.username.toLowerCase() === cleanUser
-      );
-      if (match && password === "12345678") {
-        onLoginSuccess("teacher", match.id);
-      } else {
-        setErrorMsg("Invalid Teacher portal coordinates. Use e.g., seyiadewole@progressintellectual.edu.ng / 12345678");
-      }
-    } else if (activeRole === "student") {
-      const match = db.students.find(
-        (s) => s.username.toLowerCase() === cleanUser
-      );
-      if (match && password === (match.password || "12345678")) {
-        onLoginSuccess("student", match.id);
-      } else {
-        setErrorMsg("Student registration name or password unrecognized. Use e.g., ojooluwaseyifunmirukayat@progressintellectual.edu.ng / 12345678");
-      }
+    setSubmitting(true);
+    try {
+      // Credential checking now happens server-side in login.php — the
+      // client never has access to real password values, only the
+      // school's already-public data (names, classes, scores after login).
+      const result = await loginRequest(cleanUser, password, activeRole);
+      onLoginSuccess(activeRole, result.user.id);
+    } catch (err: any) {
+      setErrorMsg(err?.message || "Invalid credentials for this portal.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  // Helper for quick demo fast logs
+  // Helper for quick demo fast logs — just fills the fields, still goes
+  // through the real server-side login when submitted.
   const triggerAutoLoginHelper = (role: LoginRole, userStr: string, passStr: string) => {
     setActiveRole(role);
     setUsername(userStr);
@@ -281,10 +265,11 @@ export default function LandingPage({ db, onLoginSuccess }: LandingPageProps) {
 
             <button
               type="submit"
-              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-lg transition-all flex items-center justify-center gap-1.5 shadow-md cursor-pointer text-xs uppercase tracking-wide"
+              disabled={submitting}
+              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-lg transition-all flex items-center justify-center gap-1.5 shadow-md cursor-pointer text-xs uppercase tracking-wide disabled:opacity-60 disabled:cursor-not-allowed"
               id="btn_submit_login"
             >
-              Sign In to {activeRole} Portal
+              {submitting ? "Signing In..." : `Sign In to ${activeRole} Portal`}
               <ArrowRight size={14} />
             </button>
 
