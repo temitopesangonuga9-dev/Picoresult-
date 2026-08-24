@@ -30,7 +30,7 @@ export default function App() {
         const seeded = getDatabase();
         // Only seed to cloud if we haven't failed sync
         if (!syncFailed) {
-          saveDatabaseToFirestore(seeded);
+          saveDatabaseToServer(seeded);
         }
         setDb(seeded);
       } else {
