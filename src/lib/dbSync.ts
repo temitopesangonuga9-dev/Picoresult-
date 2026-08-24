@@ -22,7 +22,7 @@ export const syncDatabase = (
   };
 
   fetchOnce();
-  pollInterval = setInterval(fetchOnce, 5000);
+  //pollInterval = setInterval(fetchOnce, 5000);
 
   return () => {
     if (pollInterval) clearInterval(pollInterval);
