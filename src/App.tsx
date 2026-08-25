@@ -1,139 +1,151 @@
-import React, { useState, useEffect } from "react";
-import { Database, getDatabase, saveDatabase } from "./data";
+import { useState, useEffect } from "react";
+import { Database } from "./data";
+import { syncDatabase, saveDatabaseToServer } from "./lib/dbSync";
+import { saveDatabase, loadDatabase } from "./lib/localStorage";
 import LandingPage from "./components/LandingPage";
 import AdminPortal from "./components/AdminPortal";
 import TeacherPortal from "./components/TeacherPortal";
 import StudentPortal from "./components/StudentPortal";
-import ReportCard from "./components/ReportCard";
-import { syncDatabase, saveDatabaseToServer } from "./lib/dbSync";
 
 export default function App() {
-  const [db, setDb] = useState<Database | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [syncFailed, setSyncFailed] = useState(false);
   const [userRole, setUserRole] = useState<"landing" | "admin" | "teacher" | "student">("landing");
-  const [userId, setUserId] = useState<string>("");
-  const [reportView, setReportView] = useState<{
-    studentId: string;
-    session: string;
-    term: string;
-  } | null>(null);
+  const [userId, setUserId] = useState("");
+  const [db, setDb] = useState<Database | null>(null);
+  const [syncFailed, setSyncFailed] = useState(false);
+  const [reportView, setReportView] = useState<string | null>(null);
 
+  // On app load: try to load local cache first, then sync from server
   useEffect(() => {
-    const unsub = syncDatabase((syncedDb) => {
-      // Robust check: Is it truly empty?
-      const hasAnyData = (syncedDb.students && syncedDb.students.length > 0) || 
-                         (syncedDb.classes && syncedDb.classes.length > 0) ||
-                         (syncedDb.schoolSettings && syncedDb.schoolSettings.schoolName);
-
-      if (!hasAnyData) {
-        const seeded = getDatabase();
-        // Only seed to cloud if we haven't failed sync
-        if (!syncFailed) {
-          saveDatabaseToServer(seeded);
+    const loadInitialData = async () => {
+      try {
+        // 1. Load from browser cache first (fast)
+        const cachedDb = loadDatabase();
+        if (cachedDb) {
+          setDb(cachedDb);
         }
-        setDb(seeded);
-      } else {
-        setDb(syncedDb);
-        setSyncFailed(false);
+
+        // 2. Fetch fresh data from server (will overwrite cache)
+        syncDatabase(
+          (freshDb) => {
+            setDb(freshDb);
+            saveDatabase(freshDb); // Update cache
+            setSyncFailed(false);
+          },
+          (err) => {
+            console.error("Initial sync error:", err);
+            // Cache is still available if sync fails
+            setSyncFailed(true);
+          }
+        );
+      } catch (err) {
+        console.error("Failed to load initial data:", err);
       }
-      setLoading(false);
-    }, (error) => {
-      console.error("Firestore sync error:", error);
-      setSyncFailed(true);
-      // Fallback to local storage if firestore fails
-      const localData = getDatabase();
-      setDb(localData);
-      setLoading(false);
-    });
-    return unsub;
-  }, [syncFailed]);
+    };
 
-  const handleLoginSuccess = (role: "admin" | "teacher" | "student", id: string) => {
-  setUserRole(role);
-  setUserId(id);
-  setReportView(null);
-  
-  // ADD THIS LINE - reload fresh data from database on login:
-  syncDatabase(setDb, (err) => console.error("Sync error:", err));
-};
+    loadInitialData();
+  }, []);
 
+  // Handle successful login: reload fresh data from server
+  const handleLoginSuccess = async (role: "admin" | "teacher" | "student", id: string) => {
+    setUserRole(role);
+    setUserId(id);
+    setReportView(null);
+
+    // **KEY FIX:** Fetch fresh data from server after login
+    try {
+      syncDatabase(
+        (freshDb) => {
+          setDb(freshDb);
+          saveDatabase(freshDb);
+          setSyncFailed(false);
+        },
+        (err) => {
+          console.error("Sync error after login:", err);
+          setSyncFailed(true);
+        }
+      );
+    } catch (err) {
+      console.error("Login sync failed:", err);
+    }
+  };
+
+  // Handle logout (keep data cached - don't clear it)
   const handleLogout = () => {
     setUserRole("landing");
     setUserId("");
     setReportView(null);
+    // DON'T clear db - keep it cached for next login
   };
 
+  // Handle data updates: save to server AND local cache
   const handleUpdateDb = async (newDb: Database) => {
     try {
+      // Save to server
       await saveDatabaseToServer(newDb);
+      // Update local state and cache
       setDb(newDb);
       saveDatabase(newDb);
       setSyncFailed(false);
     } catch (error) {
-      console.error("Failed to save to Firestore:", error);
-      alert("Error saving data to the cloud. Changes saved locally to this browser only.");
+      console.error("Failed to save to server:", error);
+      // Keep the changes locally even if save fails
       setDb(newDb);
       saveDatabase(newDb);
       setSyncFailed(true);
+      alert("Error saving to server. Changes saved locally. Please try again.");
     }
   };
 
-  // Back from printing goes back to student portal or whichever active portal trigger
-  const handleBackToPortal = () => {
-    setReportView(null);
-  };
-
-  if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
-  }
-  
-  if (!db) {
-    return <div className="min-h-screen flex items-center justify-center text-red-600">Failed to load application data. Please check your network or refresh the page.</div>;
+  // Show loading state if data not yet loaded
+  if (db === null && userRole === "landing") {
+    return (
+      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
+        <h2>Loading...</h2>
+      </div>
+    );
   }
 
-  return (
-    <div className="bg-slate-50 min-h-screen text-slate-800 font-sans tracking-tight antialiased">
-      {reportView ? (
-        <ReportCard
-          studentId={reportView.studentId}
-          session={reportView.session}
-          term={reportView.term}
-          db={db}
-          onBack={handleBackToPortal}
-        />
-      ) : (
-        <>
-          {userRole === "landing" && (
-            <LandingPage db={db} onLoginSuccess={handleLoginSuccess} />
-          )}
+  // Route to appropriate portal based on user role
+  if (userRole === "landing") {
+    return <LandingPage onLoginSuccess={handleLoginSuccess} />;
+  }
 
-          {userRole === "admin" && (
-            <AdminPortal db={db} onUpdateDb={handleUpdateDb} onLogout={handleLogout} />
-          )}
+  if (userRole === "admin" && db) {
+    return (
+      <AdminPortal
+        db={db}
+        onUpdateDb={handleUpdateDb}
+        onLogout={handleLogout}
+        syncFailed={syncFailed}
+        reportView={reportView}
+        setReportView={setReportView}
+      />
+    );
+  }
 
-          {userRole === "teacher" && (
-            <TeacherPortal
-              teacherId={userId}
-              db={db}
-              onUpdateDb={handleUpdateDb}
-              onLogout={handleLogout}
-            />
-          )}
+  if (userRole === "teacher" && db) {
+    return (
+      <TeacherPortal
+        db={db}
+        onUpdateDb={handleUpdateDb}
+        onLogout={handleLogout}
+        userId={userId}
+        syncFailed={syncFailed}
+      />
+    );
+  }
 
-          {userRole === "student" && (
-            <StudentPortal
-              studentId={userId}
-              db={db}
-              onLogout={handleLogout}
-              onUpdateDb={handleUpdateDb}
-              onViewReport={(session, term) =>
-                setReportView({ studentId: userId, session, term })
-              }
-            />
-          )}
-        </>
-      )}
-    </div>
-  );
+  if (userRole === "student" && db) {
+    return (
+      <StudentPortal
+        db={db}
+        onUpdateDb={handleUpdateDb}
+        onLogout={handleLogout}
+        userId={userId}
+        syncFailed={syncFailed}
+      />
+    );
+  }
+
+  return null;
 }
