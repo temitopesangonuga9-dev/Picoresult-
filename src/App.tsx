@@ -50,10 +50,13 @@ export default function App() {
   }, [syncFailed]);
 
   const handleLoginSuccess = (role: "admin" | "teacher" | "student", id: string) => {
-    setUserRole(role);
-    setUserId(id);
-    setReportView(null);
-  };
+  setUserRole(role);
+  setUserId(id);
+  setReportView(null);
+  
+  // ADD THIS LINE - reload fresh data from database on login:
+  syncDatabase(setDb, (err) => console.error("Sync error:", err));
+};
 
   const handleLogout = () => {
     setUserRole("landing");
